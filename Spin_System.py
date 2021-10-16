@@ -413,18 +413,13 @@ class Flow:
         X = X_in
         Y = Y_in
         J = np.eye(2*self.syst.T*self.syst.N, 2*self.syst.T*self.syst.N)
-        #print("Action before: {}".format(self.syst.action(X, Y)))
-        #act_before = self.syst.action(X,Y)
         while t_count<self.flow_time:
-            #print(t_count)
             X_flow, Y_flow, J_flow = self.rk4_step(X, Y, J, dt)
             if self.syst.action(X_flow, Y_flow).real >= self.syst.action(X, Y).real and np.abs(self.syst.action(X_flow, Y_flow).imag - self.syst.action(X, Y).imag)<0.2:
                 X = X_flow
                 Y = Y_flow
                 J = J_flow
                 t_count += dt
-                #print(self.syst.action(X, Y))
-                #print(t_count)
             elif dt_base/dt > 10**10:
                 print("STUCK AT TIME {}".format(t_count))
                 return (X, Y, J)
@@ -435,7 +430,6 @@ class Flow:
                 dt = dt/2
         return (X, Y, J)
 
-# Testing of functionality. Once functionality is verified, willl implement Quantum Monte Carlo        
 def full_qmc(beta):
     N = 3
     T = 3
@@ -443,72 +437,23 @@ def full_qmc(beta):
     for i in range(N):
         S.append(10)
     Lambda = 300*beta
-    ham = Frustrated_Triplet_Hamiltonian(N, S, 1, 1) #Single_Spin_Hamiltonian(N, S) # 
+    ham = Frustrated_Triplet_Hamiltonian(N, S, 1, 1) 
     syst = Spin_System(N, T, S, beta, ham, Lambda)
-    flow = Flow(0.05/(beta**(0.75)), 100, syst) #Good at beta = 1, maybe tweak for beta = 0.1
+    flow = Flow(0.05/(beta**(0.75)), 100, syst) 
     base_flow = Flow(0, 100, syst)
     X = np.random.normal(size = (N, T), scale = 0.01)
     Y = np.random.normal(size = (N, T), loc = 1.0, scale = 0.01)
 
-##    betas = np.zeros(10)
-##    error_bars_phase = np.zeros(10)
-##    avgs_phase = np.zeros(10)
-##    base_error_phase = np.zeros(10)
-##    base_avgs_phase = np.zeros(10)
-##    
-##    error_bars_energy = np.zeros(10)
-##    avgs_energy = np.zeros(10)
-##    base_error_energy = np.zeros(10)
-##    base_avgs_energy = np.zeros(10)
     num_samples = 1000
     num_thermalization = 1000
 
-##    for i in range(10):
-##        beta = 1 - i*0.1
-##        betas[i] = beta
-##        syst.beta = beta
-##        baseline_energy = np.zeros(5, dtype = np.complex128)
-##        baseline_phase = np.zeros(5, dtype = np.complex128)
-##        exp_phase = np.zeros(5, dtype = np.complex128)
-##        exp_energy = np.zeros(5, dtype = np.complex128)
     expector = syst.H.energy
-##        for j in range(5):
-##    print("BETA: {}".format(beta))
-##            X = np.random.normal(size = (N, T))
-##            Y = np.random.normal(size = (N, T))
-##    print("Baseline**********")
     drift_const = 0.08/np.sqrt(beta)
-    base_inte, base_phase, base_acc = QMC(num_samples, num_thermalization, syst, base_flow, X, Y, expector, drift_const, False) #Need to tune drifts!
-##            baseline_energy[j] = inte/phase
+    base_inte, base_phase, base_acc = QMC(num_samples, num_thermalization, syst, base_flow, X, Y, expector, drift_const, False) 
     print("Value: {}".format(base_inte/base_phase))
-##            baseline_phase[j] = np.abs(phase/num_samples)
     print("<sign>: {}".format(np.abs(base_phase/num_samples)))
-##    print("******************")
-##    print("Actual************")
     drift_const = 0.004/(beta**(0.35)) #Good
-    inte, phase, acc = QMC(num_samples, num_thermalization, syst, flow, X, Y, expector, drift_const, True) #Need to tune drifts!
-##            exp_energy[j] = inte/phase
-##            exp_phase[j] = np.abs(phase/num_samples)
-##            print("Value: {}".format(inte/phase))
-##            print("<sign>: {}".format(np.abs(phase/num_samples)))
-
-##    print("******************")
-
-##        error_bars_phase[i] = np.std(exp_phase)
-##        avgs_phase[i] = np.mean(exp_phase)
-##        error_bars_energy[i] = np.std(exp_energy)
-##        avgs_energy[i] = np.mean(exp_energy)
-##        base_error_energy[i] = np.std(baseline_energy)
-##        base_avgs_energy[i] = np.mean(baseline_energy)
-##        base_error_phase[i] = np.std(baseline_phase)
-##        base_avgs_phase[i] = np.mean(baseline_phase)
-##    print(X)
-##    print(X.shape)
-##    print(Y)
-##    print(Y.shape)
-##    print("Action before: {}".format(syst.action(X, Y)))
-##    X_prime, Y_prime, J = flow.adaptive_flow(X, Y)
-##    print(syst.action(X_prime, Y_prime))
+    inte, phase, acc = QMC(num_samples, num_thermalization, syst, flow, X, Y, expector, drift_const, True) 
     return (inte/phase, np.abs(phase/num_samples), acc, base_inte/base_phase, np.abs(base_phase/num_samples), base_acc)
 
 def main():
@@ -536,7 +481,6 @@ def QMC(num_samples, num_thermalization, syst, flow, starting_X, starting_Y, exp
     integral = 0
     residual_phase = 0
     for i in range(num_samples+num_thermalization):
-       # if print_status:
         print(">> {}".format(i))
         delta_X = np.random.normal(scale = drift_const, size = X.shape)
         delta_Y = np.random.normal(scale = drift_const, size = Y.shape)
