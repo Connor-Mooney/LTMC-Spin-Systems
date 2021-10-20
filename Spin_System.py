@@ -91,6 +91,7 @@ class Single_Spin_Hamiltonian(Hamiltonian):
     def energy(self, X, Y):
         return J_Y(X[0], Y[0], self.S[0])
     
+    # particle_index indicates with respect to which particle you're taking the x or y partial
     def derivative(self, XorY, particle_index, X, Y):
         return J_Y_derivative(XorY, X[0], Y[0], self.S[0])
                 
@@ -114,6 +115,8 @@ class Frustrated_Triplet_Hamiltonian(Hamiltonian):
                      J_Z(X[0],Y[0],self.S[0])*J_Z(X[2],Y[2],self.S[2]) +
                      J_Z(X[1],Y[1],self.S[1])*J_Z(X[2],Y[2],self.S[2]))
         return E
+    
+    #particle_index works the same as above
     
     def derivative(self, XorY, particle_index, X, Y):
         if particle_index == 2:
@@ -166,6 +169,7 @@ class Spin_System:
         self.beta = beta
         self.Lambda = lambda_
 
+    # geometric phase of action
     def berry_phase(self, X, Y):
         bp = 0
         for i in range(self.N):
@@ -174,6 +178,7 @@ class Spin_System:
             bp += -2j*self.S[i]*((X[i,0]-X[i,-1])*Y[i,-1] - (Y[i,0]-Y[i,-1])*X[i,-1])/(1+X[i,-1]**2+Y[i,-1]**2)
         return bp
 
+    # derivative with respect to x or y (depending on XorY) of the n_ind-th particle in the t_ind-th timeslice
     def berry_phase_derivative(self, XorY, n_ind, t_ind, X, Y):
         if t_ind == self.T-1:
             t_ind = -1
@@ -194,7 +199,7 @@ class Spin_System:
             der = -2j*self.S[n_ind]*der
         return der
 
-
+    # second derivatives work in the same way
     def berry_phase_second_derivative(self, XorY_1, XorY_2, number_index_1, number_index_2, time_index_1, time_index_2, X, Y):
         if number_index_1 != number_index_2: return 0
         else:
@@ -295,6 +300,7 @@ class Spin_System:
             else:
                 return 4*(x**2-y**2-1)/(x**2+y**2+1)**2
 
+    # Gives the total action (S' in our paper)
     def action(self, X, Y):
         vol_sum = 0
         ham_sum = 0
@@ -303,7 +309,7 @@ class Spin_System:
                 vol_sum += self.vol_log(X[i, j], Y[i, j])
             ham_sum += self.H.energy(X[:, j], Y[:, j])
         return self.berry_phase(X, Y) + self.beta/self.T * ham_sum + vol_sum
-        
+    
     def action_derivative(self, XorY, particle_index, time_index, X, Y):
         return (self.berry_phase_derivative(XorY, particle_index, time_index, X, Y) + self.beta/self.T * self.H.derivative(XorY, particle_index, X[:, time_index], Y[:, time_index])
                 + self.vol_log_derivative(XorY, X[particle_index,time_index], Y[particle_index,time_index]))
@@ -316,7 +322,8 @@ class Spin_System:
             second_deriv += self.beta/self.T * self.H.second_derivative(XorY_1, XorY_2, particle_index_1, particle_index_2, X[:, time_index_1], Y[:, time_index_1])
         second_deriv += self.berry_phase_second_derivative(XorY_1, XorY_2, particle_index_1, particle_index_2, time_index_1, time_index_2, X, Y)
         return second_deriv
-        
+    
+    # Gives the action without the volume element (S in the paper)
     def bosonic_action(self, X, Y):
         ham_sum = 0
         for j in range(self.T):
@@ -376,6 +383,7 @@ class Spin_System:
 
 
 class Flow:
+    # Class to implement flows
     def __init__(self, flow_time, flow_steps, spin_syst):
         self.syst = spin_syst
         self.flow_time = flow_time
@@ -405,7 +413,7 @@ class Flow:
         return (X_out, Y_out, J_out)
 
 
-    # Adaptive flow, checking that flow is increasing real action and not drifting in imaginary part too much
+    # Adaptive flow, checking that flow is increasing the real part of its action and not drifting in imaginary part too much
     def adaptive_flow(self, X_in, Y_in):
         t_count = 0
         dt_base = self.flow_time/self.flow_steps
@@ -430,6 +438,7 @@ class Flow:
                 dt = dt/2
         return (X, Y, J)
 
+# Executes one QMC run at beta, all other parameters taken care of. Preconfigured for ease of parallelization
 def full_qmc(beta):
     N = 3
     T = 3
@@ -449,21 +458,22 @@ def full_qmc(beta):
 
     expector = syst.H.energy
     drift_const = 0.08/np.sqrt(beta)
-    base_inte, base_phase, base_acc = QMC(num_samples, num_thermalization, syst, base_flow, X, Y, expector, drift_const, False) 
+    base_inte, base_phase, base_acc = QMC(num_samples, num_thermalization, syst, base_flow, X, Y, expector, drift_const) 
     print("Value: {}".format(base_inte/base_phase))
     print("<sign>: {}".format(np.abs(base_phase/num_samples)))
     drift_const = 0.004/(beta**(0.35)) #Good
-    inte, phase, acc = QMC(num_samples, num_thermalization, syst, flow, X, Y, expector, drift_const, True) 
+    inte, phase, acc = QMC(num_samples, num_thermalization, syst, flow, X, Y, expector, drift_const) 
     return (inte/phase, np.abs(phase/num_samples), acc, base_inte/base_phase, np.abs(base_phase/num_samples), base_acc)
 
 def main():
-    num_betas = 5
+    # Performs 5 QMC runs in parallel over various values of beta.
+    num_betas = 10
     num_samples = 5
     betas = []
 
     for i in range(num_betas):
         for j in range(num_samples):
-            betas.append(0.5-i*0.1)
+            betas.append(1.0-i*0.1)
 
     pool = mp.Pool(mp.cpu_count())
     results = pool.map(full_qmc, [beta for beta in betas])
@@ -471,7 +481,11 @@ def main():
     print(betas)
     print(results)
 
-def QMC(num_samples, num_thermalization, syst, flow, starting_X, starting_Y, expector, drift_const, print_status):
+# QMC with all parameters adjustable
+# first performs num_thermalization thermalization steps, then num_samples actual samples
+# syst and flow give the information of the actual system and flow, it starts at starting_X and starting_Y,
+# takes the expectation of expector, and each step is normally distributed with standard deviation of drift_const
+def QMC(num_samples, num_thermalization, syst, flow, starting_X, starting_Y, expector, drift_const):
     print("DRIFT CONSTANT FOR BETA={}: {}".format(syst.beta, drift_const))
     X = starting_X
     Y = starting_Y
