@@ -153,9 +153,9 @@ class Frustrated_Triplet_Hamiltonian(Hamiltonian):
         else:
             D = 0
             D += self.G*(J_X_derivative(XorY_1, X[particle_index_1], Y[particle_index_1], self.S[particle_index_1])
-                         + J_X_derivative(XorY_2, X[particle_index_2], Y[particle_index_2], self.S[particle_index_2]))
+                         * J_X_derivative(XorY_2, X[particle_index_2], Y[particle_index_2], self.S[particle_index_2]))
             D += self.J*(J_Z_derivative(XorY_1, X[particle_index_1], Y[particle_index_1], self.S[particle_index_1])
-                         + J_Z_derivative(XorY_2, X[particle_index_2], Y[particle_index_2], self.S[particle_index_2]))
+                         * J_Z_derivative(XorY_2, X[particle_index_2], Y[particle_index_2], self.S[particle_index_2]))
             return D
 
 #Implementation of the spin coherent state action for a spin system
