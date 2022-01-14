@@ -157,7 +157,132 @@ class Frustrated_Triplet_Hamiltonian(Hamiltonian):
             D += self.J*(J_Z_derivative(XorY_1, X[particle_index_1], Y[particle_index_1], self.S[particle_index_1])
                          * J_Z_derivative(XorY_2, X[particle_index_2], Y[particle_index_2], self.S[particle_index_2]))
             return D
+class Four_site_lattice(Hamiltonian):
+    def __init__(self, spin, J, Gamma):
+	    self.G = Gamma
+	    self.J = J
+	    super().__init__(4, spin)
+    def energy(self, X, Y):
+            E = 0
+            E += self.G*(J_X(X[0],Y[0],self.S[0])*J_X(X[1],Y[1],self.S[1]) +
+                         J_X(X[0],Y[0],self.S[0])*J_X(X[2],Y[2],self.S[2]) +
+                         J_X(X[1],Y[1],self.S[1])*J_X(X[2],Y[2],self.S[2]) + 
+                         J_X(X[1],Y[1],self.S[1])*J_X(X[3],Y[3],self.S[3]) +
+                         J_X(X[2],Y[2],self.S[2])*J_X(X[3],Y[3],self.S[3]))
+            E += self.J*(J_Z(X[0],Y[0],self.S[0])*J_Z(X[1],Y[1],self.S[1]) +
+                         J_Z(X[0],Y[0],self.S[0])*J_Z(X[2],Y[2],self.S[2]) +
+                         J_Z(X[1],Y[1],self.S[1])*J_Z(X[2],Y[2],self.S[2]) + 
+                         J_Z(X[1],Y[1],self.S[1])*J_Z(X[3],Y[3],self.S[3]) +
+                         J_Z(X[2],Y[2],self.S[2])*J_Z(X[3],Y[3],self.S[3]))
+            return E
+    def derivative(self, XorY, particle_index, X, Y):
+            D = 0
+            if particle_index == 0:
+                    D += ((self.G * J_X_derivative(XorY, X[0], Y[0], self.S[0])) * 
+                         (J_X(X[1], Y[1], self.S[1]) + J_X(X[2], Y[2], self.S[2])))
+                    D += (self.J * J_Z_derivative(XorY, X[0], Y[0], self.S[0]) * 
+                         (J_Z(X[1], Y[1], self.S[1]) + J_Z(X[2], Y[2], self.S[2])))
+            elif particle_index == 1:
+                    D += (self.G * J_X_derivative(XorY, X[1], Y[1], self.S[1]) * 
+                         (J_X(X[0], Y[0], self.S[0]) + J_X(X[2], Y[2], self.S[2] + J_X(X[3], Y[3], self.S[3]))))
+                    D += (self.J * J_Z_derivative(XorY, X[1], Y[1], self.S[1]) * 
+                         (J_Z(X[0], Y[0], self.S[0]) + J_Z(X[2], Y[2], self.S[2])  + J_Z(X[3], Y[3], self.S[3])))
+            elif particle_index == 2:
+                    D += (self.G * J_X_derivative(XorY, X[2], Y[2], self.S[2]) * 
+                         (J_X(X[0], Y[0], self.S[0]) + J_X(X[1], Y[1], self.S[1] + J_X(X[3], Y[3], self.S[3]))))
+                    D += (self.J * J_Z_derivative(XorY, X[2], Y[2], self.S[2]) * 
+                         (J_Z(X[0], Y[0], self.S[0]) + J_Z(X[1], Y[1], self.S[1])  + J_Z(X[3], Y[3], self.S[3])))
+            elif particle_index == 3:
+                    D += (self.G * J_X_derivative(XorY, X[3], Y[3], self.S[3]) * 
+                         (J_X(X[1], Y[1], self.S[1]) + J_X(X[2], Y[2], self.S[2])))
+                    D += (self.J * J_Z_derivative(XorY, X[3], Y[3], self.S[3]) * 
+                         (J_Z(X[1], Y[1], self.S[1]) + J_Z(X[2], Y[2], self.S[2])))
+            return D
 
+    def second_derivative(self, XorY_1, XorY_2, particle_index_1, particle_index_2, X, Y):
+            D = 0
+            if particle_index_1 == particle_index_2:
+                    if particle_index_1 == 0:
+                            D += (self.G * J_X_second_derivative(XorY_1, XorY_2, X[0], Y[0], self.S[0]) * 
+                            (J_X(X[1], Y[1], self.S[1]) + J_X(X[2], Y[2], self.S[2])))
+                            D += (self.J * J_Z_second_derivative(XorY_1, XorY_2, X[0], Y[0], self.S[0]) * 
+                            (J_Z(X[1], Y[1], self.S[1]) + J_Z(X[2], Y[2], self.S[2])))
+                    elif particle_index_1 == 1:
+                            D += (self.G * J_X_second_derivative(XorY_1, XorY_2, X[1], Y[1], self.S[1]) * 
+                            (J_X(X[0], Y[0], self.S[0]) + J_X(X[2], Y[2], self.S[2] + J_X(X[3], Y[3], self.S[3]))))
+                            D += (self.J * J_Z_second_derivative(XorY_1, XorY_2, X[1], Y[1], self.S[1]) * 
+                            (J_Z(X[0], Y[0], self.S[0]) + J_Z(X[2], Y[2], self.S[2])  + J_Z(X[3], Y[3], self.S[3])))
+                    elif particle_index_1 == 2:
+                            D += (self.G * J_X_second_derivative(XorY_1, XorY_2, X[2], Y[2], self.S[2]) * 
+                            (J_X(X[0], Y[0], self.S[0]) + J_X(X[1], Y[1], self.S[1] + J_X(X[3], Y[3], self.S[3]))))
+                            D += (self.J * J_Z_second_derivative(XorY_1, XorY_2, X[2], Y[2], self.S[2]) * 
+                            (J_Z(X[0], Y[0], self.S[0]) + J_Z(X[1], Y[1], self.S[1])  + J_Z(X[3], Y[3], self.S[3])))
+                    elif particle_index_1 == 3:
+                            D += (self.G * J_X_second_derivative(XorY_1, XorY_2, X[3], Y[3], self.S[3]) * 
+                            (J_X(X[1], Y[1], self.S[1]) + J_X(X[2], Y[2], self.S[2])))
+                            D += (self.J * J_Z_second_derivative(XorY_1, XorY_2, X[3], Y[3], self.S[3]) * 
+                            (J_Z(X[1], Y[1], self.S[1]) + J_Z(X[2], Y[2], self.S[2])))
+                    return D
+            else:
+                    if particle_index_1 == 0:
+                            if particle_index_2 == 1:
+                                    D += (self.G * J_X_derivative(XorY_1, X[0], Y[0], self.S[0]) *
+                                         J_X_derivative(XorY_2, X[1], Y[1], self.S[1]))
+                                    D += (self.J * J_Z_derivative(XorY_1, X[0], Y[0], self.S[0]) *
+                                         J_Z_derivative(XorY_2, X[1], Y[1], self.S[1]))
+                            elif particle_index_2 == 2:
+                                    D += (self.G * J_X_derivative(XorY_1, X[0], Y[0], self.S[0]) *
+                                         J_X_derivative(XorY_2, X[2], Y[2], self.S[2]))
+                                    D += (self.J * J_Z_derivative(XorY_1, X[0], Y[0], self.S[0]) *
+                                         J_Z_derivative(XorY_2, X[2], Y[2], self.S[2]))
+                            return D
+                    elif particle_index_1 == 1:
+                            if particle_index_2 == 0:
+                                    D += (self.G * J_X_derivative(XorY_1, X[1], Y[1], self.S[1]) *
+                                         J_X_derivative(XorY_2, X[0], Y[0], self.S[0]))
+                                    D += (self.J * J_Z_derivative(XorY_1, X[1], Y[1], self.S[1]) *
+                                         J_Z_derivative(XorY_2, X[0], Y[0], self.S[0]))
+                            elif particle_index_2 == 2:
+                                    D += (self.G * J_X_derivative(XorY_1, X[1], Y[1], self.S[1]) *
+                                         J_X_derivative(XorY_2, X[2], Y[2], self.S[2]))
+                                    D += (self.J * J_Z_derivative(XorY_1, X[1], Y[1], self.S[1]) *
+                                         J_Z_derivative(XorY_2, X[2], Y[2], self.S[2]))
+                            elif particle_index_2 == 3:
+                                    D += (self.G * J_X_derivative(XorY_1, X[1], Y[1], self.S[1]) *
+                                         J_X_derivative(XorY_2, X[3], Y[3], self.S[3]))
+                                    D += (self.J * J_Z_derivative(XorY_1, X[1], Y[1], self.S[1]) *
+                                         J_Z_derivative(XorY_2, X[3], Y[3], self.S[3]))
+                            return D
+                    elif particle_index_1 == 2:
+                            if particle_index_2 == 0:
+                                    D += (self.G * J_X_derivative(XorY_1, X[2], Y[2], self.S[2]) *
+                                         J_X_derivative(XorY_2, X[0], Y[0], self.S[0]))
+                                    D += (self.J * J_Z_derivative(XorY_1, X[2], Y[2], self.S[2]) *
+                                         J_Z_derivative(XorY_2, X[0], Y[0], self.S[0]))
+                            elif particle_index_2 == 1:
+                                    D += (self.G * J_X_derivative(XorY_1, X[2], Y[2], self.S[2]) *
+                                         J_X_derivative(XorY_2, X[1], Y[1], self.S[1]))
+                                    D += (self.J * J_Z_derivative(XorY_1, X[2], Y[2], self.S[2]) *
+                                         J_Z_derivative(XorY_2, X[1], Y[1], self.S[1]))
+                            elif particle_index_2 == 3:
+                                    D += (self.G * J_X_derivative(XorY_1, X[2], Y[2], self.S[2]) *
+                                         J_X_derivative(XorY_2, X[3], Y[3], self.S[3]))
+                                    D += (self.J * J_Z_derivative(XorY_1, X[2], Y[2], self.S[2]) *
+                                         J_Z_derivative(XorY_2, X[3], Y[3], self.S[3]))
+                            return D
+                    elif particle_index_1 == 3:
+                            if particle_index_2 == 1:
+                                    D += (self.G * J_X_derivative(XorY_1, X[3], Y[3], self.S[3]) *
+                                         J_X_derivative(XorY_2, X[1], Y[1], self.S[1]))
+                                    D += (self.J * J_Z_derivative(XorY_1, X[3], Y[3], self.S[3]) *
+                                         J_Z_derivative(XorY_2, X[1], Y[1], self.S[1]))
+                            elif particle_index_2 == 2:
+                                    D += (self.G * J_X_derivative(XorY_1, X[3], Y[3], self.S[3]) *
+                                         J_X_derivative(XorY_2, X[2], Y[2], self.S[2]))
+                                    D += (self.J * J_Z_derivative(XorY_1, X[3], Y[3], self.S[3]) *
+                                         J_Z_derivative(XorY_2, X[2], Y[2], self.S[2]))
+                            return D
+                        
 #Implementation of the spin coherent state action for a spin system
 
 class Spin_System:
