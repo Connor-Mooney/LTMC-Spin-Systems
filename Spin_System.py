@@ -389,6 +389,13 @@ class Flow:
         self.flow_time = flow_time
         self.flow_steps = flow_steps
 
+        
+    def simple_step(self, X_in, Y_in, J_in, dt):
+        X_out = X_in + dt * self.syst.dzdt(0, X_in, Y_in)
+        Y_out = Y_in + dt * self.syst.dzdt(1, X_in, Y_in)
+        J_out = J_in + dt * self.syst.dJdt(X_in, Y_in, J_in)
+        return (X_out, Y_out, J_out)
+
     # Single step for 4th order runge-kutta
     def rk4_step(self, X_in, Y_in, J_in, dt):
         k1_x = self.syst.dzdt(0, X_in, Y_in)
