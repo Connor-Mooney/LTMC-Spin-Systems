@@ -517,7 +517,7 @@ def QMC(num_samples, num_thermalization, syst, flow, starting_X, starting_Y, exp
             eff_action = eff_action_next
             accepted += 1
         if i > num_thermalization:
-            integral += expector(X_prime[0], Y_prime[0]) * np.exp(-1j * eff_action.imag)
+            integral += expector(X_prime[:, 0], Y_prime[:, 0]) * np.exp(-1j * eff_action.imag)
             residual_phase += np.exp(-1j * eff_action.imag)
     print("Number accepted: {}".format(accepted))
     return (integral, residual_phase, accepted)
