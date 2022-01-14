@@ -339,10 +339,10 @@ class Spin_System:
             for j in range(self.T):
                 for k in range(self.N):
                     for l in range(self.T):
-                        hess[self.N*i+j, self.N*k+l] = self.action_second_derivative(0, 0, i, k, j, l, X, Y)
-                        hess[(self.N*self.T)+self.N*i+j, self.N*k+l] = self.action_second_derivative(1, 0, i, k, j, l, X, Y)
-                        hess[self.N*i+j, (self.N*self.T)+self.N*k+l] = self.action_second_derivative(0, 1, i, k, j, l, X, Y)
-                        hess[(self.N*self.T)+self.N*i+j, (self.N*self.T)+self.N*k+l] = self.action_second_derivative(1, 1, i, k, j, l, X, Y)
+                        hess[self.N*j+i, self.N*l+k] = self.action_second_derivative(0, 0, i, k, j, l, X, Y)
+                        hess[(self.N*self.T)+self.N*j+i, self.N*l+k] = self.action_second_derivative(1, 0, i, k, j, l, X, Y)
+                        hess[self.N*j+i, (self.N*self.T)+self.N*l+k] = self.action_second_derivative(0, 1, i, k, j, l, X, Y)
+                        hess[(self.N*self.T)+self.N*j+i, (self.N*self.T)+self.N*l+k] = self.action_second_derivative(1, 1, i, k, j, l, X, Y)
         return hess
 
     # Gives the steps in the non blow-up gradient flows
@@ -361,10 +361,10 @@ class Spin_System:
             for j in range(self.T):
                 for k in range(self.N):
                     for l in range(self.T):
-                        aux_mat_1[self.N*i+j, self.N*k+l] += (self.action_derivative(0, i, j, X, Y)*(-self.bosonic_action_derivative(0, k, l, X, Y)/self.Lambda))
-                        aux_mat_1[self.T*self.N+self.N*i+j, self.T*self.N+self.N*k+l] += (self.action_derivative(1, i, j, X, Y)*(-self.bosonic_action_derivative(1, k, l, X, Y)/self.Lambda))
-                        aux_mat_1[self.N*i+j, self.T*self.N+self.N*k+l] += (self.action_derivative(0, i, j, X, Y)*(-self.bosonic_action_derivative(1, k, l, X, Y)/self.Lambda))
-                        aux_mat_1[self.T*self.N+self.N*i+j, self.N*k+l] += (self.action_derivative(1, i, j, X, Y)*(-self.bosonic_action_derivative(0, k, l, X, Y)/self.Lambda))
+                        aux_mat_1[self.N*j+i, self.N*l+k] += (self.action_derivative(0, i, j, X, Y)*(-self.bosonic_action_derivative(0, k, l, X, Y)/self.Lambda))
+                        aux_mat_1[self.T*self.N+self.N*j+i, self.T*self.N+self.N*l+k] += (self.action_derivative(1, i, j, X, Y)*(-self.bosonic_action_derivative(1, k, l, X, Y)/self.Lambda))
+                        aux_mat_1[self.N*j+i, self.T*self.N+self.N*l+k] += (self.action_derivative(0, i, j, X, Y)*(-self.bosonic_action_derivative(1, k, l, X, Y)/self.Lambda))
+                        aux_mat_1[self.T*self.N+self.N*j+i, self.N*l+k] += (self.action_derivative(1, i, j, X, Y)*(-self.bosonic_action_derivative(0, k, l, X, Y)/self.Lambda))
 
 
         dJ += np.conj((self.hessian_matrix(X, Y) + aux_mat_1)@J_in)
@@ -373,10 +373,10 @@ class Spin_System:
             for j in range(self.T):
                 for k in range(self.N):
                     for l in range(self.T):
-                        aux_mat_2[self.N*i+j, self.N*k+l] += (np.conj(self.action_derivative(0, i, j, X, Y))*(-self.bosonic_action_derivative(0, k, l, X, Y)/self.Lambda))
-                        aux_mat_2[self.T*self.N+self.N*i+j, self.T*self.N+self.N*k+l] += (np.conj(self.action_derivative(1, i, j, X, Y))*(-self.bosonic_action_derivative(1, k, l, X, Y)/self.Lambda))
-                        aux_mat_2[self.N*i+j, self.T*self.N+self.N*k+l] += (np.conj(self.action_derivative(0, i, j, X, Y))*(-self.bosonic_action_derivative(1, k, l, X, Y)/self.Lambda))
-                        aux_mat_2[self.T*self.N+self.N*i+j, self.N*k+l] += (np.conj(self.action_derivative(1, i, j, X, Y))*(-self.bosonic_action_derivative(0, k, l, X, Y)/self.Lambda))
+                        aux_mat_2[self.N*j+i, self.N*l+k] += (np.conj(self.action_derivative(0, i, j, X, Y))*(-self.bosonic_action_derivative(0, k, l, X, Y)/self.Lambda))
+                        aux_mat_2[self.T*self.N+self.N*j+i, self.T*self.N+self.N*l+k] += (np.conj(self.action_derivative(1, i, j, X, Y))*(-self.bosonic_action_derivative(1, k, l, X, Y)/self.Lambda))
+                        aux_mat_2[self.N*j+i, self.T*self.N+self.N*l+k] += (np.conj(self.action_derivative(0, i, j, X, Y))*(-self.bosonic_action_derivative(1, k, l, X, Y)/self.Lambda))
+                        aux_mat_2[self.T*self.N+self.N*j+i, self.N*l+k] += (np.conj(self.action_derivative(1, i, j, X, Y))*(-self.bosonic_action_derivative(0, k, l, X, Y)/self.Lambda))
         dJ += aux_mat_2@J_in
         dJ *= np.exp(-2 * self.bosonic_action(X, Y).real/self.Lambda)
         return dJ
