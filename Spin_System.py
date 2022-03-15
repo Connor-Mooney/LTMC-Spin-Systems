@@ -554,7 +554,7 @@ class Flow:
         Y = Y_in
         J = np.eye(2*self.syst.T*self.syst.N, 2*self.syst.T*self.syst.N)
         while t_count<self.flow_time:
-            X_flow, Y_flow, J_flow = self.rk4_step(X, Y, J, dt)
+            X_flow, Y_flow, J_flow = self.simple_step(X, Y, J, dt) #self.rk4_step(X, Y, J, dt)#
             if self.syst.action(X_flow, Y_flow).real >= self.syst.action(X, Y).real and np.abs(self.syst.action(X_flow, Y_flow).imag - self.syst.action(X, Y).imag)<0.2:
                 X = X_flow
                 Y = Y_flow
