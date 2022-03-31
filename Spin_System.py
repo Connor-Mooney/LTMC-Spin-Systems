@@ -580,10 +580,18 @@ def full_qmc(beta):
     Lambda = 300*beta
     ham = Frustrated_Triplet_Hamiltonian(N, S, 1, 1) 
     syst = Spin_System(N, T, S, beta, ham, Lambda)
-    flow = Flow(0.05/(beta**(0.75)), 100, syst) 
+    flow = Flow(0.02/(beta**(0.75)), 100, syst) 
     base_flow = Flow(0, 100, syst)
-    X = np.random.normal(size = (N, T), scale = 0.01)
-    Y = np.random.normal(size = (N, T), loc = 1.0, scale = 0.01)
+##    X = np.random.normal(size = (N, T), scale = 0.01)
+##    Y = np.random.normal(size = (N, T), loc = 1.0, scale = 0.01)
+    # better starting point
+    # effective action ~-180
+    X = np.array([[-1.49905465+0.j, -1.49535116+0.j, -1.4916209 +0.j],
+                  [ 0.05985293+0.j,  0.06081368+0.j,  0.0606531 +0.j],
+                  [ 2.00016556+0.j,  2.00504165+0.j,  1.99667781+0.j]], dtype = np.complex128)
+    Y = np.array([[ 1.86310496e-02+0.j,  1.65341043e-02+0.j,  1.40666676e-02+0.j],
+                  [-8.50735076e-06+0.j,  1.97718627e-05+0.j, -2.57619016e-05+0.j],
+                  [-4.19499942e-02+0.j, -3.11212969e-02+0.j, -3.82962198e-02+0.j]], dtype = np.complex128)
 
     num_samples = 1000
     num_thermalization = 1000
@@ -593,7 +601,7 @@ def full_qmc(beta):
     base_inte, base_phase, base_acc = QMC(num_samples, num_thermalization, syst, base_flow, X, Y, expector, drift_const) 
     print("Value: {}".format(base_inte/base_phase))
     print("<sign>: {}".format(np.abs(base_phase/num_samples)))
-    drift_const = 0.004/(beta**(0.35)) #Good
+    drift_const = 0.00004/(beta**(0.35)) 
     inte, phase, acc = QMC(num_samples, num_thermalization, syst, flow, X, Y, expector, drift_const) 
     return (inte/phase, np.abs(phase/num_samples), acc, base_inte/base_phase, np.abs(base_phase/num_samples), base_acc)
 
@@ -641,8 +649,10 @@ def QMC(num_samples, num_thermalization, syst, flow, starting_X, starting_Y, exp
             Y_prime = Y_next_prime
             eff_action = eff_action_next
             accepted += 1
-        if i > num_thermalization:
-            integral += expector(X_prime[:, 0], Y_prime[:, 0]) * np.exp(-1j * eff_action.imag)
+            for j in range(syst.T):
+                print(expector(X_prime[:, j], Y_prime[:, j]))
+                ham_avg += 1/syst.T*expector(X_prime[:, j], Y_prime[:, j])
+            integral += ham_avg * np.exp(-1j * eff_action.imag) #Changing from row to column should fix
             residual_phase += np.exp(-1j * eff_action.imag)
     print("Number accepted: {}".format(accepted))
     return (integral, residual_phase, accepted)
