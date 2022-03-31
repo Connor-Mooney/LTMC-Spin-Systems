@@ -649,11 +649,12 @@ def QMC(num_samples, num_thermalization, syst, flow, starting_X, starting_Y, exp
             Y_prime = Y_next_prime
             eff_action = eff_action_next
             accepted += 1
-            for j in range(syst.T):
-                print(expector(X_prime[:, j], Y_prime[:, j]))
-                ham_avg += 1/syst.T*expector(X_prime[:, j], Y_prime[:, j])
-            integral += ham_avg * np.exp(-1j * eff_action.imag) #Changing from row to column should fix
-            residual_phase += np.exp(-1j * eff_action.imag)
+	    if i >= num_thermalization:
+		for j in range(syst.T):
+	    	    print(expector(X_prime[:, j], Y_prime[:, j]))
+		    ham_avg += 1/syst.T*expector(X_prime[:, j], Y_prime[:, j])
+		integral += ham_avg * np.exp(-1j * eff_action.imag) #Changing from row to column should fix
+		residual_phase += np.exp(-1j * eff_action.imag)
     print("Number accepted: {}".format(accepted))
     return (integral, residual_phase, accepted)
     
