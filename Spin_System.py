@@ -634,6 +634,10 @@ def QMC(num_samples, num_thermalization, syst, flow, starting_X, starting_Y, exp
     eff_action = syst.action(X_prime, Y_prime) - np.log(np.linalg.det(J))
     integral = 0
     residual_phase = 0
+    real_eff_acts = []
+    im_eff_acts = []
+    integ_elements = []
+    residual_phase_elements = []
     for i in range(num_samples+num_thermalization):
         print(">> {}".format(i))
         delta_X = np.random.normal(scale = drift_const, size = X.shape)
@@ -653,11 +657,52 @@ def QMC(num_samples, num_thermalization, syst, flow, starting_X, starting_Y, exp
 		for j in range(syst.T):
 	    	    print(expector(X_prime[:, j], Y_prime[:, j]))
 		    ham_avg += 1/syst.T*expector(X_prime[:, j], Y_prime[:, j])
+		
+		real_eff_acts.append(eff_action.real)
+                im_eff_acts.append(eff_action.imag)
+                integ_elements.append(ham_avg * np.exp(-1j * eff_action.imag))
+                residual_phase_elements.append(np.exp(-1j * eff_action.imag))
 		integral += ham_avg * np.exp(-1j * eff_action.imag) #Changing from row to column should fix
 		residual_phase += np.exp(-1j * eff_action.imag)
+    print(X)
+    print(Y)
+    print("Number accepted: {}".format(accepted))
+    real_eff_acts = np.array(real_eff_acts)
+    im_eff_acts = np.array(im_eff_acts)
+    integ_elements = np.array(integ_elements)
+    residual_phase_elements = np.array(residual_phase_elements)
+    print("calculating autocorrelation times")
+    autocorr= max([max([tau(im_eff_acts, i), tau(real_eff_acts, i)]) for i in range(int(num_samples/5))])
+    print("autocorr:{}".format(autocorr))
+    error_integral = np.std(integ_elements)*np.sqrt(autocorr/num_samples)
+    error_phase = np.std(residual_phase_elements)*np.sqrt(autocorr/num_samples)
+    print("error integral: {}".format(error_integral))
+    print("error phas: {}".format(error_phase))
+    net_error = np.abs(integral/residual_phase) * np.sqrt((error_integral/np.abs(integral))**2+(error_phase/np.abs(residual_phase))**2) #error propagation
+    print("Net error: {}".format(net_error))
+    print("<E> = {}".format(integral/residual_phase))
     print("Number accepted: {}".format(accepted))
     return (integral, residual_phase, accepted)
     
+def tau(data, M):
+    auto = 1
+    for i in range(1,M+1):
+        auto += 2*rho(data, i)
+    return auto
+
+def c(data, tau):
+    c = 0
+    m = np.mean(data)
+    for i in range(data.size-tau):
+        c += (data[i]-m)*(data[i+tau]-m)
+    c = c/(data.size-tau)
+    return c
+
+
+def rho(data, tau):
+    return c(data, tau)/c(data, 0)
+
+	
 
 if __name__ == "__main__":
     main()
