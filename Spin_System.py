@@ -578,20 +578,29 @@ def full_qmc(beta):
     for i in range(N):
         S.append(10)
     Lambda = 300*beta
-    ham = Frustrated_Triplet_Hamiltonian(N, S, 1, 1) 
+    ham = Frustrated_Triplet_Hamiltonian(N, S, 0.003, 0.003) #1, 1) 
     syst = Spin_System(N, T, S, beta, ham, Lambda)
-    flow = Flow(0.02/(beta**(0.75)), 100, syst) 
+    flow = Flow(0.02/(beta**(0.75)), 100, syst) #HERE ARE THE CURRENT GOOD VALUES FOR WHEN ||H||=1 #0.7 beta = 1#0.81 beta = 0.1 #beta = 0.5, 0.75
     base_flow = Flow(0, 100, syst)
 ##    X = np.random.normal(size = (N, T), scale = 0.01)
 ##    Y = np.random.normal(size = (N, T), loc = 1.0, scale = 0.01)
     # better starting point
     # effective action ~-180
-    X = np.array([[-1.49905465+0.j, -1.49535116+0.j, -1.4916209 +0.j],
-                  [ 0.05985293+0.j,  0.06081368+0.j,  0.0606531 +0.j],
-                  [ 2.00016556+0.j,  2.00504165+0.j,  1.99667781+0.j]], dtype = np.complex128)
-    Y = np.array([[ 1.86310496e-02+0.j,  1.65341043e-02+0.j,  1.40666676e-02+0.j],
-                  [-8.50735076e-06+0.j,  1.97718627e-05+0.j, -2.57619016e-05+0.j],
-                  [-4.19499942e-02+0.j, -3.11212969e-02+0.j, -3.82962198e-02+0.j]], dtype = np.complex128)
+##    X = np.array([[-1.49905465+0.j, -1.49535116+0.j, -1.4916209 +0.j],
+##                  [ 0.05985293+0.j,  0.06081368+0.j,  0.0606531 +0.j],
+##                  [ 2.00016556+0.j,  2.00504165+0.j,  1.99667781+0.j]], dtype = np.complex128)
+##    Y = np.array([[ 1.86310496e-02+0.j,  1.65341043e-02+0.j,  1.40666676e-02+0.j],
+##                  [-8.50735076e-06+0.j,  1.97718627e-05+0.j, -2.57619016e-05+0.j],
+##                  [-4.19499942e-02+0.j, -3.11212969e-02+0.j, -3.82962198e-02+0.j]], dtype = np.complex128)
+    X = np.zeros((N, T), dtype = np.complex128)
+    Y = np.zeros((N, T), dtype = np.complex128)
+    for i in range(T):
+        X[0, i] = -1.5#-1.49905465
+        X[1, i] = 0.05#0.05985293
+        X[2, i] = 2.#00016556
+        Y[0, i] = 0.016#1.86310496e-02
+        Y[1, i] = 0.#-8.5073507e-06
+        Y[2, i] = -0.04#-4.19499942e-02
 
     num_samples = 1000
     num_thermalization = 1000
@@ -601,7 +610,7 @@ def full_qmc(beta):
     base_inte, base_phase, base_acc = QMC(num_samples, num_thermalization, syst, base_flow, X, Y, expector, drift_const) 
     print("Value: {}".format(base_inte/base_phase))
     print("<sign>: {}".format(np.abs(base_phase/num_samples)))
-    drift_const = 0.00004/(beta**(0.35)) 
+    drift_const = 0.00004/(beta**(0.35)) #HERE ARE THE CURRENT GOOD VALUES for when||H||=1: beta = 0.5, 0.45e-9 #1e-9 beta = 1 #beta = 0.1: 0.15*1e-9
     inte, phase, acc = QMC(num_samples, num_thermalization, syst, flow, X, Y, expector, drift_const) 
     return (inte/phase, np.abs(phase/num_samples), acc, base_inte/base_phase, np.abs(base_phase/num_samples), base_acc)
 
