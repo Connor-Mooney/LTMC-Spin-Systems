@@ -157,6 +157,8 @@ class Frustrated_Triplet_Hamiltonian(Hamiltonian):
             D += self.J*(J_Z_derivative(XorY_1, X[particle_index_1], Y[particle_index_1], self.S[particle_index_1])
                          * J_Z_derivative(XorY_2, X[particle_index_2], Y[particle_index_2], self.S[particle_index_2]))
             return D
+	
+	
 class Four_site_lattice(Hamiltonian):
     def __init__(self, spin, J, Gamma):
 	    self.G = Gamma
@@ -663,6 +665,7 @@ def QMC(num_samples, num_thermalization, syst, flow, starting_X, starting_Y, exp
             eff_action = eff_action_next
             accepted += 1
 	    if i >= num_thermalization:
+		ham_avg = 0
 		for j in range(syst.T):
 	    	    print(expector(X_prime[:, j], Y_prime[:, j]))
 		    ham_avg += 1/syst.T*expector(X_prime[:, j], Y_prime[:, j])
