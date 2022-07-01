@@ -1,37 +1,45 @@
 import numpy as np
 import multiprocessing as mp
+import numba as nb
+from numba.experimental import jitclass
+import time
 
 # Spin operators and their derivatives
-
+@nb.njit
 def J_Z(x, y, S):
     return S*(1-x**2-y**2)/(1+x**2+y**2)
 
+@nb.njit
 def J_X(x, y, S):
     return 2*S*x/(1+x**2+y**2)
 
+@nb.njit
 def J_Y(x, y, S):
     return 2*S*y/(1+x**2+y**2)
 
 # XorY gives which variable the derivative is being taken with respect to
+@nb.njit
 def J_Z_derivative(XorY, x, y, S):
     if XorY == 0:
         return -4*S*x/(1+x**2+y**2)**2
     else:
         return -4*S*y/(1+x**2+y**2)**2
 
+@nb.njit
 def J_X_derivative(XorY, x, y, S):
     if XorY == 0:
         return 2*S*(y**2-x**2+1)/(1+x**2+y**2)**2
     else:
         return -4*S*x*y/(1+x**2+y**2)**2
 
-
+@nb.njit
 def J_Y_derivative(XorY, x, y, S):
     if XorY == 0:
         return -4*S*x*y/(1+x**2+y**2)**2
     else:
         return 2*S*(x**2-y**2+1)/(1+x**2+y**2)**2
 
+@nb.njit
 def J_Z_second_derivative(XorY_1, XorY_2, x, y, S):
     if XorY_1 == 0:
         if XorY_2 == 0:
@@ -44,7 +52,7 @@ def J_Z_second_derivative(XorY_1, XorY_2, x, y, S):
         else:
             return 4*S*(3*y**2-x**2-1)/(x**2+y**2+1)**3     
 
-
+@nb.njit
 def J_X_second_derivative(XorY_1, XorY_2, x, y, S):
     if XorY_1 == 0:
         if XorY_2 == 0:
@@ -57,6 +65,7 @@ def J_X_second_derivative(XorY_1, XorY_2, x, y, S):
         else:
             return -4*S*x*(x**2-3*y**2+1)/(x**2+y**2+1)**3     
 
+@nb.njit
 def J_Y_second_derivative(XorY_1, XorY_2, x, y, S):
     if XorY_1 == 0:
         if XorY_2 == 0:
@@ -70,7 +79,11 @@ def J_Y_second_derivative(XorY_1, XorY_2, x, y, S):
             return 4*S*y*(y**2-3*x**2-3)/(x**2+y**2+1)**3
 
 #General abstract class for hamiltonians
-
+spec_ham = [
+    ('spin', nb.int32), #this is a custom class
+    ('num_particles', nb.int32)
+]
+@jitclass(spec_ham)
 class Hamiltonian:
     def __init__(self, num_particles, spin):
         self.S = spin
@@ -106,6 +119,7 @@ class Frustrated_Triplet_Hamiltonian(Hamiltonian):
         self.J = J
         super().__init__(num_particles, spin)
 
+    
     def energy(self, X, Y):
         E = 0
         E += self.G*(J_X(X[0],Y[0],self.S[0])*J_X(X[1],Y[1],self.S[1]) + 
@@ -157,13 +171,13 @@ class Frustrated_Triplet_Hamiltonian(Hamiltonian):
             D += self.J*(J_Z_derivative(XorY_1, X[particle_index_1], Y[particle_index_1], self.S[particle_index_1])
                          * J_Z_derivative(XorY_2, X[particle_index_2], Y[particle_index_2], self.S[particle_index_2]))
             return D
-	
-	
+    
+    
 class Four_site_lattice(Hamiltonian):
     def __init__(self, spin, J, Gamma):
-	    self.G = Gamma
-	    self.J = J
-	    super().__init__(4, spin)
+        self.G = Gamma
+        self.J = J
+        super().__init__(4, spin)
     def energy(self, X, Y):
             E = 0
             E += self.G*(J_X(X[0],Y[0],self.S[0])*J_X(X[1],Y[1],self.S[1]) +
@@ -406,9 +420,11 @@ class Spin_System:
                         return 0
 
     # Gives the logarithm of the stereographic volume element
+  
     def vol_log(self, x, y):
         return 2*np.log(x**2+y**2+1)
-                
+
+              
     def vol_log_derivative(self, XorY, x, y):
         if XorY == 0:
             return 4*x/(1+x**2+y**2)
@@ -509,6 +525,12 @@ class Spin_System:
         return dJ
 
 
+# spec_flow = [
+#     ('spin_syst', ), #this is a custom class
+#     ('flow_time', nb.float32),
+#     ('flow_steps', nb.int32)
+# ]
+# @nb.jitclass(spec_flow)
 class Flow:
     # Class to implement flows
     def __init__(self, flow_time, flow_steps, spin_syst):
@@ -584,6 +606,7 @@ def full_qmc(beta):
     syst = Spin_System(N, T, S, beta, ham, Lambda)
     flow = Flow(0.02/(beta**(0.75)), 100, syst) #HERE ARE THE CURRENT GOOD VALUES FOR WHEN ||H||=1 #0.7 beta = 1#0.81 beta = 0.1 #beta = 0.5, 0.75
     base_flow = Flow(0, 100, syst)
+    
 ##    X = np.random.normal(size = (N, T), scale = 0.01)
 ##    Y = np.random.normal(size = (N, T), loc = 1.0, scale = 0.01)
     # better starting point
@@ -618,7 +641,7 @@ def full_qmc(beta):
 
 def main():
     # Performs 5 QMC runs in parallel over various values of beta.
-    num_betas = 10
+    num_betas = 1
     num_samples = 5
     betas = []
 
@@ -650,6 +673,7 @@ def QMC(num_samples, num_thermalization, syst, flow, starting_X, starting_Y, exp
     integ_elements = []
     residual_phase_elements = []
     for i in range(num_samples+num_thermalization):
+        tic=time.perf_counter()
         print(">> {}".format(i))
         delta_X = np.random.normal(scale = drift_const, size = X.shape)
         delta_Y = np.random.normal(scale = drift_const, size = Y.shape)
@@ -664,18 +688,21 @@ def QMC(num_samples, num_thermalization, syst, flow, starting_X, starting_Y, exp
             Y_prime = Y_next_prime
             eff_action = eff_action_next
             accepted += 1
-	    if i >= num_thermalization:
-		ham_avg = 0
-		for j in range(syst.T):
-	    	    print(expector(X_prime[:, j], Y_prime[:, j]))
-		    ham_avg += 1/syst.T*expector(X_prime[:, j], Y_prime[:, j])
-		
-		real_eff_acts.append(eff_action.real)
-                im_eff_acts.append(eff_action.imag)
-                integ_elements.append(ham_avg * np.exp(-1j * eff_action.imag))
-                residual_phase_elements.append(np.exp(-1j * eff_action.imag))
-		integral += ham_avg * np.exp(-1j * eff_action.imag) #Changing from row to column should fix
-		residual_phase += np.exp(-1j * eff_action.imag)
+        if i >= num_thermalization:
+            ham_avg = 0
+            for j in range(syst.T):
+                print(expector(X_prime[:, j], Y_prime[:, j]))
+                ham_avg += 1/syst.T*expector(X_prime[:, j], Y_prime[:, j])
+        
+            real_eff_acts.append(eff_action.real)
+            im_eff_acts.append(eff_action.imag)
+            integ_elements.append(ham_avg * np.exp(-1j * eff_action.imag))
+            residual_phase_elements.append(np.exp(-1j * eff_action.imag))
+            integral += ham_avg * np.exp(-1j * eff_action.imag) #Changing from row to column should fix
+            residual_phase += np.exp(-1j * eff_action.imag)
+        
+        toc=time.perf_counter()
+        print("Time elapsed: %0.4f seconds" %(toc-tic)) 
     print(X)
     print(Y)
     print("Number accepted: {}".format(accepted))
@@ -714,7 +741,7 @@ def c(data, tau):
 def rho(data, tau):
     return c(data, tau)/c(data, 0)
 
-	
+    
 
 if __name__ == "__main__":
     main()
