@@ -1,7 +1,6 @@
 import numpy as np
 import multiprocessing as mp
 import numba as nb
-from numba.experimental import jitclass
 import time
 
 # Spin operators and their derivatives
@@ -79,11 +78,6 @@ def J_Y_second_derivative(XorY_1, XorY_2, x, y, S):
             return 4*S*y*(y**2-3*x**2-3)/(x**2+y**2+1)**3
 
 #General abstract class for hamiltonians
-spec_ham = [
-    ('spin', nb.int32), #this is a custom class
-    ('num_particles', nb.int32)
-]
-@jitclass(spec_ham)
 class Hamiltonian:
     def __init__(self, num_particles, spin):
         self.S = spin
