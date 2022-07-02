@@ -106,6 +106,7 @@ class Single_Spin_Hamiltonian(Hamiltonian):
         return J_Y_second_derivative(XorY_1, XorY_2, X[0], Y[0], self.S[0])
 
 
+
 # Class for frustrated spin triplet
 class Frustrated_Triplet_Hamiltonian(Hamiltonian):
     def __init__(self, num_particles, spin, J, Gamma):
@@ -115,32 +116,56 @@ class Frustrated_Triplet_Hamiltonian(Hamiltonian):
 
     
     def energy(self, X, Y):
+        return self.energy_helper(self.G, self.J, self.S, X, Y)
+        # E = 0
+        # E += self.G*(J_X(X[0],Y[0],self.S[0])*J_X(X[1],Y[1],self.S[1]) + 
+        #              J_X(X[0],Y[0],self.S[0])*J_X(X[2],Y[2],self.S[2]) +
+        #              J_X(X[1],Y[1],self.S[1])*J_X(X[2],Y[2],self.S[2]))
+        # E += self.J*(J_Z(X[0],Y[0],self.S[0])*J_Z(X[1],Y[1],self.S[1]) + 
+        #              J_Z(X[0],Y[0],self.S[0])*J_Z(X[2],Y[2],self.S[2]) +
+        #              J_Z(X[1],Y[1],self.S[1])*J_Z(X[2],Y[2],self.S[2]))
+        # return E
+
+    @staticmethod
+    @nb.njit
+    def energy_helper(G,J,S,X,Y):
         E = 0
-        E += self.G*(J_X(X[0],Y[0],self.S[0])*J_X(X[1],Y[1],self.S[1]) + 
-                     J_X(X[0],Y[0],self.S[0])*J_X(X[2],Y[2],self.S[2]) +
-                     J_X(X[1],Y[1],self.S[1])*J_X(X[2],Y[2],self.S[2]))
-        E += self.J*(J_Z(X[0],Y[0],self.S[0])*J_Z(X[1],Y[1],self.S[1]) + 
-                     J_Z(X[0],Y[0],self.S[0])*J_Z(X[2],Y[2],self.S[2]) +
-                     J_Z(X[1],Y[1],self.S[1])*J_Z(X[2],Y[2],self.S[2]))
+        E += G*(J_X(X[0],Y[0],S[0])*J_X(X[1],Y[1],S[1]) + 
+                     J_X(X[0],Y[0],S[0])*J_X(X[2],Y[2],S[2]) +
+                     J_X(X[1],Y[1],S[1])*J_X(X[2],Y[2],S[2]))
+        E += J*(J_Z(X[0],Y[0],S[0])*J_Z(X[1],Y[1],S[1]) + 
+                     J_Z(X[0],Y[0],S[0])*J_Z(X[2],Y[2],S[2]) +
+                     J_Z(X[1],Y[1],S[1])*J_Z(X[2],Y[2],S[2]))
         return E
+
     
     #particle_index works the same as above
     
     def derivative(self, XorY, particle_index, X, Y):
+        return self.derivative_helper(self.G, self.J, self.S, XorY, particle_index, X, Y)
+    
+    @staticmethod
+    @nb.njit
+    def derivative_helper(G,J,S,XorY,particle_index,X,Y):
         if particle_index == 2:
             particle_index = -1
         D = 0
-        D += self.G*(J_X_derivative(XorY, X[particle_index], Y[particle_index], self.S[particle_index])
-                     * J_X(X[particle_index+1], Y[particle_index+1], self.S[particle_index+1])
-                     + J_X_derivative(XorY, X[particle_index], Y[particle_index], self.S[particle_index])
-                     * J_X(X[particle_index-1], Y[particle_index-1], self.S[particle_index-1]))
-        D += self.J*(J_Z_derivative(XorY, X[particle_index], Y[particle_index], self.S[particle_index])
-                     * J_Z(X[particle_index+1], Y[particle_index+1], self.S[particle_index+1])
-                     + J_Z_derivative(XorY, X[particle_index], Y[particle_index], self.S[particle_index])
-                     * J_Z(X[particle_index-1], Y[particle_index-1], self.S[particle_index-1]))
+        D += G*(J_X_derivative(XorY, X[particle_index], Y[particle_index], S[particle_index])
+                     * J_X(X[particle_index+1], Y[particle_index+1], S[particle_index+1])
+                     + J_X_derivative(XorY, X[particle_index], Y[particle_index], S[particle_index])
+                     * J_X(X[particle_index-1], Y[particle_index-1], S[particle_index-1]))
+        D += J*(J_Z_derivative(XorY, X[particle_index], Y[particle_index], S[particle_index])
+                     * J_Z(X[particle_index+1], Y[particle_index+1], S[particle_index+1])
+                     + J_Z_derivative(XorY, X[particle_index], Y[particle_index], S[particle_index])
+                     * J_Z(X[particle_index-1], Y[particle_index-1], S[particle_index-1]))
         return D
 
     def second_derivative(self, XorY_1, XorY_2, particle_index_1, particle_index_2, X, Y):
+        return self.second_derivative_helper(self.G,self.J,self.S, XorY_1, XorY_2, particle_index_1, particle_index_2, X, Y)
+
+    @staticmethod
+    @nb.njit
+    def second_derivative_helper(G,J,S, XorY_1, XorY_2, particle_index_1, particle_index_2, X, Y):
         D = 0
         if particle_index_1 == 2:
             particle_index_1 = -1
@@ -149,21 +174,21 @@ class Frustrated_Triplet_Hamiltonian(Hamiltonian):
 
         if particle_index_1 == particle_index_2:
             D = 0
-            D += self.G*(J_X_second_derivative(XorY_1, XorY_2, X[particle_index_1], Y[particle_index_1], self.S[particle_index_1])
-                         * J_X(X[particle_index_1+1], Y[particle_index_1+1], self.S[particle_index_1+1])
-                         + J_X_second_derivative(XorY_1, XorY_2, X[particle_index_1], Y[particle_index_1], self.S[particle_index_1])
-                         * J_X(X[particle_index_1-1], Y[particle_index_1-1], self.S[particle_index_1-1]))
-            D += self.J*(J_Z_second_derivative(XorY_1, XorY_2, X[particle_index_1], Y[particle_index_1], self.S[particle_index_1])
-                         * J_Z(X[particle_index_1+1], Y[particle_index_1+1], self.S[particle_index_1+1])
-                         + J_Z_second_derivative(XorY_1, XorY_2, X[particle_index_1], Y[particle_index_1], self.S[particle_index_1])
-                         * J_Z(X[particle_index_1-1], Y[particle_index_1-1], self.S[particle_index_1-1]))
+            D += G*(J_X_second_derivative(XorY_1, XorY_2, X[particle_index_1], Y[particle_index_1], S[particle_index_1])
+                         * J_X(X[particle_index_1+1], Y[particle_index_1+1], S[particle_index_1+1])
+                         + J_X_second_derivative(XorY_1, XorY_2, X[particle_index_1], Y[particle_index_1], S[particle_index_1])
+                         * J_X(X[particle_index_1-1], Y[particle_index_1-1], S[particle_index_1-1]))
+            D += J*(J_Z_second_derivative(XorY_1, XorY_2, X[particle_index_1], Y[particle_index_1], S[particle_index_1])
+                         * J_Z(X[particle_index_1+1], Y[particle_index_1+1], S[particle_index_1+1])
+                         + J_Z_second_derivative(XorY_1, XorY_2, X[particle_index_1], Y[particle_index_1], S[particle_index_1])
+                         * J_Z(X[particle_index_1-1], Y[particle_index_1-1], S[particle_index_1-1]))
             return D
         else:
             D = 0
-            D += self.G*(J_X_derivative(XorY_1, X[particle_index_1], Y[particle_index_1], self.S[particle_index_1])
-                         * J_X_derivative(XorY_2, X[particle_index_2], Y[particle_index_2], self.S[particle_index_2]))
-            D += self.J*(J_Z_derivative(XorY_1, X[particle_index_1], Y[particle_index_1], self.S[particle_index_1])
-                         * J_Z_derivative(XorY_2, X[particle_index_2], Y[particle_index_2], self.S[particle_index_2]))
+            D += G*(J_X_derivative(XorY_1, X[particle_index_1], Y[particle_index_1], S[particle_index_1])
+                         * J_X_derivative(XorY_2, X[particle_index_2], Y[particle_index_2], S[particle_index_2]))
+            D += J*(J_Z_derivative(XorY_1, X[particle_index_1], Y[particle_index_1], S[particle_index_1])
+                         * J_Z_derivative(XorY_2, X[particle_index_2], Y[particle_index_2], S[particle_index_2]))
             return D
     
     
@@ -306,16 +331,26 @@ class Spin_System:
 
     # geometric phase of action
     def berry_phase(self, X, Y):
+        return self.berry_phase_helper(self.S, self.N, self.T, X,Y)
+
+    @staticmethod
+    @nb.njit
+    def berry_phase_helper(S,N,T, X, Y):
         bp = 0
-        for i in range(self.N):
-            for j in range(self.T-1):
-                bp += -2j*self.S[i]*((X[i,j+1]-X[i,j])*Y[i,j] - (Y[i,j+1]-Y[i,j])*X[i,j])/(1+X[i,j]**2+Y[i,j]**2)
-            bp += -2j*self.S[i]*((X[i,0]-X[i,-1])*Y[i,-1] - (Y[i,0]-Y[i,-1])*X[i,-1])/(1+X[i,-1]**2+Y[i,-1]**2)
+        for i in range(N):
+            for j in range(T-1):
+                bp += -2j*S[i]*((X[i,j+1]-X[i,j])*Y[i,j] - (Y[i,j+1]-Y[i,j])*X[i,j])/(1+X[i,j]**2+Y[i,j]**2)
+            bp += -2j*S[i]*((X[i,0]-X[i,-1])*Y[i,-1] - (Y[i,0]-Y[i,-1])*X[i,-1])/(1+X[i,-1]**2+Y[i,-1]**2)
         return bp
 
     # derivative with respect to x or y (depending on XorY) of the n_ind-th particle in the t_ind-th timeslice
     def berry_phase_derivative(self, XorY, n_ind, t_ind, X, Y):
-        if t_ind == self.T-1:
+        return self.berry_phase_derivative_helper(self.S,self.T, XorY, n_ind, t_ind, X, Y)
+
+    @staticmethod
+    @nb.njit
+    def berry_phase_derivative_helper(S,T, XorY, n_ind, t_ind, X, Y):
+        if t_ind == T-1:
             t_ind = -1
         der = 0
         if XorY == 0:
@@ -324,25 +359,30 @@ class Spin_System:
                                         - (Y[n_ind, t_ind+1]-Y[n_ind, t_ind])*X[n_ind, t_ind])
                                        /(1+X[n_ind, t_ind]**2+Y[n_ind, t_ind]**2)**2)
             der += (Y[n_ind, t_ind-1]/(1+X[n_ind, t_ind-1]**2+Y[n_ind, t_ind-1]**2))
-            der = -2j*self.S[n_ind]*der
+            der = -2j*S[n_ind]*der
         else:
             der += X[n_ind, t_ind+1]/(1+X[n_ind, t_ind]**2+Y[n_ind, t_ind]**2)
             der += -2*Y[n_ind, t_ind]*(((X[n_ind, t_ind+1]-X[n_ind, t_ind])*Y[n_ind, t_ind]
                                              - (Y[n_ind, t_ind+1]-Y[n_ind, t_ind])*X[n_ind, t_ind])
                                             /(1+X[n_ind, t_ind]**2+Y[n_ind, t_ind]**2)**2)
             der += -X[n_ind, t_ind-1]/(1+X[n_ind, t_ind-1]**2+Y[n_ind, t_ind-1]**2)
-            der = -2j*self.S[n_ind]*der
+            der = -2j*S[n_ind]*der
         return der
 
     # second derivatives work in the same way
     def berry_phase_second_derivative(self, XorY_1, XorY_2, number_index_1, number_index_2, time_index_1, time_index_2, X, Y):
+        return self.berry_phase_second_derivative_helper(self.T, self.S, XorY_1, XorY_2, number_index_1, number_index_2, time_index_1, time_index_2, X, Y)
+
+    @staticmethod
+    @nb.njit
+    def berry_phase_second_derivative_helper(T,S, XorY_1, XorY_2, number_index_1, number_index_2, time_index_1, time_index_2, X, Y):
         if number_index_1 != number_index_2: return 0
         else:
             index_1 = time_index_1
             index_2 = time_index_2
-            if index_1 ==  self.T-1:
+            if index_1 ==  T-1:
                 index_1 = -1
-            if index_2 == self.T-1:
+            if index_2 == T-1:
                 index_2 = -1
             if XorY_1 == 0:
                 if XorY_2 == 0:
@@ -352,12 +392,12 @@ class Spin_System:
                       der += (((X[number_index_1, index_1+1]-X[number_index_1,index_1])*Y[number_index_1,index_1]-(Y[number_index_1,index_1+1]-Y[number_index_1,index_1])*X[number_index_1,index_1])
                              *(8*X[number_index_1,index_1]**2/(1+X[number_index_1,index_1]**2+Y[number_index_1,index_1]**2)**3
                                -2/(1+X[number_index_1,index_1]**2+Y[number_index_1,index_1]**2)**2))
-                      der = 2j*self.S[number_index_1]*der
+                      der = 2j*S[number_index_1]*der
                       return der
-                    elif (index_1 + 1)%self.T == index_2%self.T:
-                        return 4j*self.S[number_index_1]*X[number_index_1,index_1]*Y[number_index_1,index_1]/(1+X[number_index_1,index_1]**2+Y[number_index_1,index_1]**2)**2
-                    elif (index_2+1)%self.T == index_1%self.T:
-                        return 4j*self.S[number_index_1]*X[number_index_1,index_2]*Y[number_index_1,index_2]/(1+X[number_index_1, index_2]**2+Y[number_index_1,index_2]**2)**2
+                    elif (index_1 + 1)%T == index_2%T:
+                        return 4j*S[number_index_1]*X[number_index_1,index_1]*Y[number_index_1,index_1]/(1+X[number_index_1,index_1]**2+Y[number_index_1,index_1]**2)**2
+                    elif (index_2+1)%T == index_1%T:
+                        return 4j*S[number_index_1]*X[number_index_1,index_2]*Y[number_index_1,index_2]/(1+X[number_index_1, index_2]**2+Y[number_index_1,index_2]**2)**2
                     else:
                         return 0
                 else:
@@ -369,13 +409,13 @@ class Spin_System:
                         der += 8*X[number_index_1,index_1]*Y[number_index_1,index_1]*(((X[number_index_1,index_1+1]-X[number_index_1,index_1])*Y[number_index_1,index_1]
                                                                                        - (Y[number_index_1,index_1+1]-Y[number_index_1,index_1])*X[number_index_1,index_1])
                                                                                       /(1+X[number_index_1,index_1]**2+Y[number_index_1,index_1]**2)**3) 
-                        der *= -2j*self.S[number_index_1]
+                        der *= -2j*S[number_index_1]
                         return der
-                    elif (index_1 + 1)%self.T == index_2%self.T:
-                        return -2j*self.S[number_index_1] * (2*X[number_index_1,index_1]**2/(1+X[number_index_1,index_1]**2+Y[number_index_1,index_1]**2)**2
+                    elif (index_1 + 1)%T == index_2%T:
+                        return -2j*S[number_index_1] * (2*X[number_index_1,index_1]**2/(1+X[number_index_1,index_1]**2+Y[number_index_1,index_1]**2)**2
                                                         - 1/(1+X[number_index_1,index_1]**2+Y[number_index_1,index_1]**2))
-                    elif (index_2 + 1)%self.T == index_1%self.T:
-                        return -2j*self.S[number_index_1]*(-2*Y[number_index_1,index_2]**2/(1+X[number_index_1,index_2]**2+Y[number_index_1,index_2]**2)**2
+                    elif (index_2 + 1)%T == index_1%T:
+                        return -2j*S[number_index_1]*(-2*Y[number_index_1,index_2]**2/(1+X[number_index_1,index_2]**2+Y[number_index_1,index_2]**2)**2
                                                       + 1/(1+X[number_index_1,index_2]**2+Y[number_index_1,index_2]**2))
                     else:
                         return 0
@@ -388,13 +428,13 @@ class Spin_System:
                         der += 2*Y[number_index_1,index_1]*Y[number_index_1,index_1+1]/(1+X[number_index_1,index_1]**2+Y[number_index_1,index_1]**2)**2
                         der += 8*X[number_index_1,index_1]*Y[number_index_1,index_1]*(((X[number_index_1,index_1+1]-X[number_index_1,index_1])*Y[number_index_1,index_1] - (Y[number_index_1,index_1+1]-Y[number_index_1,index_1])
                                                          *X[number_index_1,index_1])/(1+X[number_index_1,index_1]**2+Y[number_index_1,index_1]**2)**3)
-                        der *= -2j*self.S[number_index_1]
+                        der *= -2j*S[number_index_1]
                         return der
-                    elif (index_1 + 1)%self.T == index_2%self.T:
-                        return -2j*self.S[number_index_1]*(-2*Y[number_index_1,index_1]**2/(1+X[number_index_1,index_1]**2+Y[number_index_1,index_1]**2)**2
+                    elif (index_1 + 1)%T == index_2%T:
+                        return -2j*S[number_index_1]*(-2*Y[number_index_1,index_1]**2/(1+X[number_index_1,index_1]**2+Y[number_index_1,index_1]**2)**2
                                                       + 1/(1+X[number_index_1,index_1]**2+Y[number_index_1,index_1]**2))
-                    elif (index_2 + 1)%self.T == index_1%self.T:
-                        return -2j*self.S[number_index_1] * (2*X[number_index_1,index_2]**2/(1+X[number_index_1,index_2]**2+Y[number_index_1,index_2]**2)**2
+                    elif (index_2 + 1)%T == index_1%T:
+                        return -2j*S[number_index_1] * (2*X[number_index_1,index_2]**2/(1+X[number_index_1,index_2]**2+Y[number_index_1,index_2]**2)**2
                                                         - 1/(1+X[number_index_1,index_2]**2+Y[number_index_1,index_2]**2))
                     else:
                         return 0
@@ -404,28 +444,32 @@ class Spin_System:
                         der += -4*X[number_index_1,index_1+1]*Y[number_index_1,index_1]/(1+X[number_index_1,index_1]**2+Y[number_index_1,index_1]**2)**2
                         der += ((8*Y[number_index_1,index_1]**2/(1+X[number_index_1,index_1]**2+Y[number_index_1,index_1]**2)**3 - 2/(1+X[number_index_1,index_1]**2+Y[number_index_1,index_1]**2)**2)
                                 *((X[number_index_1,index_1+1]-X[number_index_1,index_1])*Y[number_index_1,index_1]-(Y[number_index_1,index_1+1]-Y[number_index_1,index_1])*X[number_index_1,index_1]))
-                        der *= -2j*self.S[number_index_1]
+                        der *= -2j*S[number_index_1]
                         return der
-                    elif (index_1 + 1)%self.T == index_2%self.T:
-                        return -4j*self.S[number_index_1]*X[number_index_1,index_1]*Y[number_index_1,index_1]/(1+X[number_index_1,index_1]**2+Y[number_index_1,index_1]**2)**2
-                    elif (index_2 + 1)%self.T == index_1%self.T:
-                        return -4j*self.S[number_index_1]*X[number_index_1,index_2]*Y[number_index_1,index_2]/(1+X[number_index_1,index_2]**2+Y[number_index_1,index_2]**2)**2
+                    elif (index_1 + 1)%T == index_2%T:
+                        return -4j*S[number_index_1]*X[number_index_1,index_1]*Y[number_index_1,index_1]/(1+X[number_index_1,index_1]**2+Y[number_index_1,index_1]**2)**2
+                    elif (index_2 + 1)%T == index_1%T:
+                        return -4j*S[number_index_1]*X[number_index_1,index_2]*Y[number_index_1,index_2]/(1+X[number_index_1,index_2]**2+Y[number_index_1,index_2]**2)**2
                     else:
                         return 0
 
     # Gives the logarithm of the stereographic volume element
-  
-    def vol_log(self, x, y):
+    @staticmethod
+    @nb.njit
+    def vol_log(x, y):
         return 2*np.log(x**2+y**2+1)
 
-              
-    def vol_log_derivative(self, XorY, x, y):
+    @staticmethod
+    @nb.njit
+    def vol_log_derivative(XorY, x, y):
         if XorY == 0:
             return 4*x/(1+x**2+y**2)
         else:
             return 4*y/(1+x**2+y**2)
 
-    def vol_log_second_derivative(self, XorY_1, XorY_2, x, y):
+    @staticmethod
+    @nb.njit
+    def vol_log_second_derivative(XorY_1, XorY_2, x, y):
         if XorY_1 == 0:
             if XorY_2 == 0:
                 return 4*(y**2-x**2-1)/(x**2+y**2+1)**2
@@ -438,7 +482,7 @@ class Spin_System:
                 return 4*(x**2-y**2-1)/(x**2+y**2+1)**2
 
     # Gives the total action (S' in our paper)
-    def action(self, X, Y):
+    def action(self, X, Y):        
         vol_sum = 0
         ham_sum = 0
         for j in range(self.T):
@@ -595,6 +639,7 @@ def full_qmc(beta):
     S = []
     for i in range(N):
         S.append(10)
+    S=nb.typed.List(S) #convert to numba list
     Lambda = 300*beta
     ham = Frustrated_Triplet_Hamiltonian(N, S, 0.003, 0.003) #1, 1) 
     syst = Spin_System(N, T, S, beta, ham, Lambda)
