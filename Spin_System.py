@@ -756,7 +756,7 @@ def QMC(num_samples, num_thermalization, syst, flow, starting_X, starting_Y, exp
     error_phase = np.std(residual_phase_elements)*np.sqrt(autocorr/num_samples)
     print("error integral: {}".format(error_integral))
     print("error phas: {}".format(error_phase))
-    net_error = np.abs(integral/residual_phase) * np.sqrt((error_integral/np.abs(integral))**2+(error_phase/np.abs(residual_phase))**2) #error propagation
+    net_error = np.abs(integral/residual_phase) * np.sqrt((error_integral/np.abs(integral/num_samples))**2+(error_phase/np.abs(residual_phase/num_samples))**2) #error propagation
     print("Net error: {}".format(net_error))
     print("<E> = {}".format(integral/residual_phase))
     print("Number accepted: {}".format(accepted))
